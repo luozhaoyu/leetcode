@@ -5,22 +5,25 @@
 
     A brief description goes here.
 """
+import copy
 class Solution:
 
     # @param start, a string
 
     # @param end, a string
 
-    # @param dict, a set of string
+    # @param dictionary, a set of string
 
     # @return a list of lists of string
+    access_cache = {}
 
-    def findLadders(self, start, end, dict):
+    def findLadders(self, start, end, dictionary):
         # BFS
-        max_path_len = len(dict)
+        max_path_len = len(dictionary)
         i = 1
         while i<=max_path_len:
-            paths = self.depth_first_search(i, start, end, dict)
+            print 'trying %i...' % i
+            paths = self.depth_first_search(i, start, end, dictionary)
             if paths:
                 return paths
             else:
@@ -37,54 +40,66 @@ class Solution:
                 return True
         return False
 
-    def get_all_accessible_change(self, current, dict):
-        l = []
-        for i in dict:
-            if self.can_access(current, i) and current != i:
-                l.append(i)
-        return l
+    def get_possible_changes(self, current, dictionary):
+        if Solution.access_cache.has_key(current):
+            return Solution.access_cache[current]
 
-    def depth_first_search(self, max_depth, start, end, dict):
+        s = set()
+        for i in dictionary:
+            if self.can_access(current, i) and current != i:
+                s.add(i)
+        Solution.access_cache[current] = copy.copy(s)
+        return s
+
+    def get_current_possible_changes(self, current, dictionary, tried):
+        result = set()
+        s = self.get_possible_changes(current, dictionary)
+        for i in s:
+            if not i in tried:
+                result.add(i)
+        return result
+
+    def depth_first_search(self, max_depth, start, end, dictionary):
         stack = [start]
         result = []
         state = []
         tried = set()
-        depth = 0
 
         while stack:
             try:
-                current = stack.pop()
-                tried.add(current)
+                current = stack[-1]
                 state.append(current)
-                depth += 1
-                if depth == max_depth: # final chance
-                    if current == end:
-                        print state
-                        result.add(state)
-                    else: # backtracking
-                        while state:
-                            last = state[-1]
-                            if last in tried: # until meet a node, which has not been tried
-                                state.pop()
-                                depth -= 1
-                            else: # 
-                                continue
+                if len(state) == max_depth: # final chance
+                    if self.can_access(current, end):
+                        result.append(copy.copy(state))
+
+                    while stack and state and stack[-1] == state[-1]:
+                        stack.pop()
+                        state.pop()
                 else:
-                    available_nodes = get_all_accessible_change(current, dict)
-                    for i in available_nodes:
-                        if not i in tried:
+                    available_nodes = self.get_current_possible_changes(current, dictionary, state)
+                    if available_nodes:
+                        for i in available_nodes:
                             stack.append(i)
+                    else: # backtracking
+                        while stack and state and stack[-1] == state[-1]:
+                            stack.pop()
+                            state.pop()
             except:
-                print "depth=%i, state=%s\ntried=%s\nresult=%s" % (depth, state, tried, result)
+                print "state=%s\ntried=%s\nresult=%s" % (state, tried, result)
                 raise
         return result
 
 def _main(argv):
+    import time
     s = Solution()
-    start = "hit"
-    end = "cog"
-    d = ["hot","dot","dog","lot","log"]
-    s.findLadders(start, end, d)
+    start, end, d = "hit", "cog", ["hot","dot","dog","lot","log"]
+
+    begin = time.time()
+    print start, end, len(d)
+    print s.findLadders(start, end, d)
+    end = time.time()
+    print end - begin
 
 if __name__ == '__main__':
     import sys
