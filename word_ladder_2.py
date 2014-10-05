@@ -6,6 +6,7 @@
     A brief description goes here.
 """
 import copy
+
 class Solution:
 
     # @param start, a string
@@ -36,14 +37,14 @@ class Solution:
             raise
         return True
 
-    def iterate_character(self, current, dict_set):
+    def iterate_character(self, current, dict_set, visited_set):
         s1 = set()
         for i in range(len(current)):
             for j in range(1, 26):
                 new_word = current[0:i] +\
                     chr((ord(current[i]) - ord('a') + j) % 26 + ord('a')) + current[i+1:]
                 s1.add(new_word)
-        s = s1.intersection(dict_set)
+        s = s1.intersection(dict_set) - visited_set
         return s
 
     def get_possible_changes(self, current, dictionary):
@@ -63,32 +64,22 @@ class Solution:
         return s
 
     def get_edges(self, start, end, dictionary):
-        def add_edge(edges, i, j):
-            if i == j:
-                return
-            if edges.has_key(i) and edges[i].has_key(j):
-                return
 
-            if edges.has_key(i):
-                edges[i][j] = 1
-            else:
-                edges[i] = {j: 1}
-
-            if edges.has_key(j):
-                edges[j][i] = 1
-            else:
-                edges[j] = {i: 1}
-
-        edges = {}
         d = set(copy.copy(dictionary))
         d.add(start)
         d.add(end)
+        edges = {}
+        for i in d: # optimization, uniformed initialization
+            edges[i] = {}
 
         dict_set = set(dictionary)
+        visited_set = set()
         for i in d:
-            iterable_words = self.iterate_character(i, dict_set)
+            iterable_words = self.iterate_character(i, dict_set, visited_set)
             for j in iterable_words:
-                add_edge(edges, i, j)
+                edges[i][j] = 1
+                edges[j][i] = 1
+            visited_set.add(i)
         return edges
 
     def shortest_path(self, start, end, dictionary):
@@ -137,7 +128,7 @@ class Solution:
             elif current_min_verticle == None:
                 print shortest_paths, unresolved_verticles
                 print Solution.access_cache
-                raise
+                return []
 
             unresolved_verticles.remove(current_min_verticle)
             for destination in edges[current_min_verticle]:
