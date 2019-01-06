@@ -66,11 +66,6 @@ class Solution:
     def wordBreak(self, s, dicts):
         self.trie = self.create_trie(dicts)
         result = []
-#        print self.trie
-#        for i in ['c', 'cat', 'ca']:
-#            print self.find_trie(i)
-        import pprint
-        pprint.pprint(self.trie)
         def dp():
             f = []
             for i in range(len(s)):
@@ -78,81 +73,74 @@ class Solution:
                 for j in range(i+1):
                     current_str = s[j: i+1]
                     if self.find_trie(current_str):
-                        print s[:i+1], current_str, i, j
                         if f[j-1]:
-                            print 'ha'
                             f[i].append(j-1)
                         else:
                             if j == 0:
                                 f[i].append(-1)
+            if not f[-1]:
+                return []
             print f
-            opened = copy.copy(f[-1])
-            last = len(s) - 1
-            current = None
+
+            opened = [[f[-1][0], len(s) - 1]]
+            last_child = None
+            generate_child = False
             # use backtracking too
             while opened:
                 try:
-                    if not current: # will only use for once
-                        current = opened[0]
-                        last = opened[0]
-                    else:
-                        current_index = f[last].index(current)
-                        if current_index + 1 == len(f[last]): # next exceed
-                            opened.pop(0)
-                            current = opened[0]
-                        else:
-                            current = f[last][current_index + 1] # pick next
-
-                    print opened, current, last, s[current+1: last+1]
+                    prev, current = opened[0]
                     # then test new current
-                    if current == -1:
+                    if prev == -1:
                         tmp = []
+                        #opened[0][0] = 0
                         for i in range(0, len(opened)-1):
-                            tmp.append(s[opened[i]: opened[i+1]+1])
+                            tmp.append(s[opened[i][0]+1: opened[i+1][0]+1])
+                        tmp.append(s[opened[-1][0] + 1:])
                         result.append(tmp)
                         opened.pop(0)
-                        current = None
+                        last_child = current
+                        generate_child = True
+                        print opened, last_child
                     else: # insert previous
-                        opened.insert(0, f[current][0])
-                        last = current
-                        current = opened[0]
+                        if generate_child:
+                            print 'fuck', last_child
+                            last_child_index = f[current].index(last_child)
+                            if last_child_index + 1 == len(f[current]): # next exceed
+                                last_child = current
+                            else: # pick next child
+                                opened.pop(0)
+                                opened.insert(0,
+                                    [f[current][last_child_index + 1], current])
+                                last_child = None
+                            generate_child = False
+                            continue
+
+                        generate_child = False
+                        if not last_child:
+                            opened.insert(0,
+                                [f[prev][0], prev])
+                            continue
+
+                        opened.pop(0)
+                        last_child_index = f[current].index(last_child)
+                        print opened, f[current], last_child
+                        if last_child_index + 1 == len(f[current]): # next exceed
+                            last_child = current
+                        else: # pick next child
+                            opened.insert(0,
+                                [f[current][last_child_index + 1], current])
+                            last_child = None
+
                 except:
-                    print "ERROR"
-                    print opened, current, last
+                    print "ERROR", opened, current
+                    print last_child
                     raise
             return result
 
-        def backtrace():
-            i = 0
-            opened = [[i, -1]] # it will move ahead then
-            while opened:
-                # move ahead
-                opened[-1][1] += 1
-                current_str = s[opened[-1][0]: opened[-1][1] + 1]
-                if opened[-1][1] == len(s) - 1:
-                    print opened, current_str
-                    if self.find_trie(current_str): # match fully
-                        bingo = []
-                        for i in opened:
-                            bingo.append(s[i[0]:i[1]+1])
-                        result.append(bingo)
-                    else:
-                        opened.pop()
-                elif opened[-1][1] >= len(s):
-                    opened.pop()
-                else:
-                    match = self.find_trie(current_str)
-                    if match: # match completely, then add it
-                        opened.append([opened[-1][1] + 1, opened[-1][1]])
-                    elif match == None: # match partially
-                        continue
-                    else:
-                        opened.pop()
-            return result
         return dp()
 
 so = Solution()
-s, dicts = "catsanddog", ["cat", "cats", "and", "sand", "dog", "a", "nd"]
+s, dicts = "catsanddog", ["cat", "cats", "and", "sand", "dog", "a", "nd", "ca", "ts"]
 #s, dicts = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", ["a","aa","aaa","aaaa","aaaaa","aaaaaa","aaaaaaa","aaaaaaaa","aaaaaaaaa","aaaaaaaaaa"]
 import pprint
 pprint.pprint(so.wordBreak(s, dicts))
